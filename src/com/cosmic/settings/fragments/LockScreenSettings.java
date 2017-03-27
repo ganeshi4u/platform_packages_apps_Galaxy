@@ -30,6 +30,7 @@ import com.android.settings.R;
 import com.android.settings.SettingsPreferenceFragment;
 import com.cosmic.settings.utils.Utils;
 import com.cosmic.settings.preferences.SystemSettingSwitchPreference;
+import android.provider.Settings;
 
 public class LockScreenSettings extends SettingsPreferenceFragment {
 
@@ -41,6 +42,8 @@ public class LockScreenSettings extends SettingsPreferenceFragment {
     private static final String KEYGUARD_TORCH = "keyguard_toggle_torch";
     private static final String FINGERPRINT_VIB = "fingerprint_success_vib";
     private static final String FP_UNLOCK_KEYSTORE = "fp_unlock_keystore";
+    private static final String FP_MAX_FAILED_ATTEMPTS = "fp_max_failed_attempts";
+    private ListPreference maxFailedAttempts;
 
     private FingerprintManager mFingerprintManager;
 
@@ -74,6 +77,27 @@ public class LockScreenSettings extends SettingsPreferenceFragment {
         if (!lockPatternUtils.isSecure(MY_USER_ID)) {
             prefScreen.removePreference(secureCategory);
         }
+
+        // fp max failed attempts
+        maxFailedAttempts = (ListPreference) findPreference(FP_MAX_FAILED_ATTEMPTS);
+        int set = Settings.System.getIntForUser(resolver,
+                Settings.System.FP_MAX_FAILED_ATTEMPTS, 5, UserHandle.USER_CURRENT);
+        maxFailedAttempts.setValue(String.valueOf(set));
+        maxFailedAttempts.setSummary(maxFailedAttempts.getEntry());
+        maxFailedAttempts.setOnPreferenceChangeListener(this);
+    }
+
+    @Override
+    public boolean onPreferenceChange(Preference preference, Object objValue) {
+         if (preference == maxFailedAttempts) {
+            int set = Integer.valueOf((String) objValue);
+            int index = maxFailedAttempts.findIndexOfValue((String) objValue);
+            Settings.System.putIntForUser(getActivity().getContentResolver(),
+                    Settings.System.FP_MAX_FAILED_ATTEMPTS, set, UserHandle.USER_CURRENT);
+            maxFailedAttempts.setSummary(maxFailedAttempts.getEntries()[index]);
+            return true;
+        }
+        return false;
     }
 
     @Override
